@@ -769,8 +769,9 @@ MonoBehaviour:
   killedPiece: {fileID: 8073484922811247727, guid: 2e2b4ca4801042a4fa6a5b43f4c55002,
     type: 3}
   timeLimit: 20
+  _gravityProcessingStatus: 0
   gameState: 0
-  moves: 5
+  moves: 7
 --- !u!4 &869164366
 Transform:
   m_ObjectHideFlags: 0

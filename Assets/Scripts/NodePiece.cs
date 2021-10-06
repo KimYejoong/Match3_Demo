@@ -64,7 +64,7 @@ public class NodePiece : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
             rect.anchoredPosition = Vector2.Lerp(rect.anchoredPosition, move, Time.deltaTime * 16f);
         else
         {
-            _fallingSpeed = Mathf.Clamp(initialSpeed, _fallingSpeed + gravity, terminalSpeed);
+            _fallingSpeed = Mathf.Clamp(_fallingSpeed + gravity, initialSpeed, terminalSpeed);
             rect.anchoredPosition += _fallingSpeed * Vector2.down;
         }
     }
@@ -73,11 +73,14 @@ public class NodePiece : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     {
         if (isFalling)
         {
+            if (Match3.Instance._gravityProcessingStatus != Match3.GravityProcessingStatus.Locked)
+                Match3.Instance._gravityProcessingStatus = Match3.GravityProcessingStatus.Await;
+            
             if (rect.anchoredPosition.y < pos.y)
             {
                 rect.anchoredPosition = pos;
                 _updating = false;
-                isFalling = false;
+                //isFalling = false;
                 _fallingSpeed = 0f;
                 return false;
             }

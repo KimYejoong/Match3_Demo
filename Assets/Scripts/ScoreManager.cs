@@ -20,8 +20,11 @@ public class ScoreManager : MonoBehaviour
     private int _currentScore = 0;
     private int _comboCount = 0;
 
+    private Coroutine _comboCoroutine;
+    
     private void Start()
     {
+        _comboCoroutine = null;
         comboObject.SetActive(false);
         ResetPoint();
     }
@@ -68,9 +71,11 @@ public class ScoreManager : MonoBehaviour
         
         _anim = comboObject.GetComponent<Animator>();
         _anim.Play("Anim_Combo_Pop", -1, 0f);
+
+        if (_comboCoroutine != null)
+            StopCoroutine((_comboCoroutine));
         
-        StopCoroutine((ComboFade()));
-        StartCoroutine(ComboFade());        
+        _comboCoroutine = StartCoroutine(ComboFade());
 
         moveValue.text = moves.ToString();
     }

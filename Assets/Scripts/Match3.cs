@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class Match3 : MonoBehaviour
 {
@@ -68,7 +69,7 @@ public class Match3 : MonoBehaviour
     private float _timeStarted;
 
     private bool _isMovable;
-    
+   
     private int _combo;    
 
     public enum GameState
@@ -78,6 +79,17 @@ public class Match3 : MonoBehaviour
         Closing,
         End
     }
+    
+    [HideInInspector]
+    public enum GravityProcessingStatus
+    {
+        Idle,
+        Locked,
+        Await,
+    }
+
+    [HideInInspector]
+    public GravityProcessingStatus _gravityProcessingStatus; 
 
     [HideInInspector]
     public GameState gameState = GameState.Ready;
@@ -107,6 +119,7 @@ public class Match3 : MonoBehaviour
         _dead = new List<NodePiece>();
         _killed = new List<KilledPiece>();
         _isMovable = true;
+        _gravityProcessingStatus = GravityProcessingStatus.Idle;
 
         InitializeScore();
         InitializeBoard();
@@ -392,14 +405,25 @@ public class Match3 : MonoBehaviour
 
         List<NodePiece> finishedUpdating = new List<NodePiece>();
 
+        if (_gravityProcessingStatus == GravityProcessingStatus.Await)
+            _gravityProcessingStatus = GravityProcessingStatus.Idle;
+        
         for (int i = 0; i < _update.Count; i++)
         {
             NodePiece piece = _update[i];
             if (!piece.UpdatePiece())
-                finishedUpdating.Add(piece);            
+            {
+                if (piece.isFalling)
+                    piece.isFalling = false;
+                else
+                    finishedUpdating.Add(piece);
+            }
         }
 
         int totalCount = _update.Count + finishedUpdating.Count;
+
+        if (_gravityProcessingStatus != GravityProcessingStatus.Idle)
+            return;
 
         for (int i = 0; i < finishedUpdating.Count; i++)
         {
@@ -518,10 +542,18 @@ public class Match3 : MonoBehaviour
 
     private IEnumerator ApplyGravityToBoard()
     {
-        for (int y = (Height - 1); y >= 0; y--) // from bottom to top
+        int[] chunkSep = new int[Width]; // pieces dropping from upper boundary of the board
+
+        for (int x = 0; x < Width; x++)
         {
-            for (int x = 0; x < Width; x++)    
+            chunkSep[x] = -1;
+            bool escape = false;
+            
+            for (int y = (Height - 1); y >= 0; y--) // from bottom to top
             {
+                if (escape)
+                    break;
+                
                 Point p = new Point(x, y);
                 Node node = GetNodeAtPoint(p);
                 int val = GetValueAtPoint(p);
@@ -549,43 +581,66 @@ public class Match3 : MonoBehaviour
                     }
                     else // case: top of the board or red cell above
                     {
-                        NodePiece piece;
-                        Point fallPoint = new Point(x, (-1 - _fills[x]));
-
-                        int newVal = FillPiece();
-                        if (_dead.Count > 0)
-                        {
-                            NodePiece revived = _dead[0];
-                            revived.gameObject.SetActive(true);
-                            revived.rect.anchoredPosition = GetPositionFromPoint(fallPoint);
-                            piece = revived;
-                            
-                            _dead.RemoveAt(0);
-                        }
-                        else // just in case
-                        {
-                            GameObject obj = Instantiate(nodePiece, gameBoard);
-                            NodePiece n = obj.GetComponent<NodePiece>();
-                            RectTransform rect = obj.GetComponent<RectTransform>();
-                            rect.anchoredPosition = GetPositionFromPoint(fallPoint);
-                            piece = n;
-                        }
-
-                        piece.Initialize(newVal, p, pieces[newVal - 1]);
-                        piece.isFalling = true;
-
-                        Node hole = GetNodeAtPoint(p);
-                        hole.SetPiece(piece);
-                        ResetPiece(piece);
-                        _fills[x]++;
+                        chunkSep[x] = y;
+                        escape = true;
                     }
+                    
                     break;
-
                 }
-                yield return new WaitForSeconds(0.02f); // delay between each piece's drop
             }
-
         }
+
+        _gravityProcessingStatus = GravityProcessingStatus.Locked; 
+        // Set status to "Locked" to prevent matching while waiting for next step(drop new piece from above)
+        yield return new WaitForSeconds(0.3f);
+        _gravityProcessingStatus = GravityProcessingStatus.Await;
+        // Set status back to "Await" so that makes it possible to check whether the process is over from individual pieces
+
+        for (int xx = 0; xx < Width; xx++)
+        {
+            if (chunkSep[xx] == -1)
+                continue;
+            
+            for (int yy = chunkSep[xx] + 1; yy > -1; yy--) // from the top of "dropped pieces" to upper boundary of the board
+            {
+                Point p = new Point(xx, yy);
+                Node node = GetNodeAtPoint(p);
+                int val = GetValueAtPoint(p);
+
+                if (val != 0) // if it is filled with sth, then just continue to next
+                    continue;
+                
+                NodePiece piece;
+                Point fallPoint = new Point(xx, (-1 - _fills[xx]));
+
+                int newVal = FillPiece();
+                if (_dead.Count > 0)
+                {
+                    NodePiece revived = _dead[0];
+                    revived.gameObject.SetActive(true);
+                    revived.rect.anchoredPosition = GetPositionFromPoint(fallPoint);
+                    piece = revived;
+                            
+                    _dead.RemoveAt(0);
+                }
+                else // in case when no dead piece is available
+                {
+                    GameObject obj = Instantiate(nodePiece, gameBoard);
+                    NodePiece n = obj.GetComponent<NodePiece>();
+                    RectTransform rect = obj.GetComponent<RectTransform>();
+                    rect.anchoredPosition = GetPositionFromPoint(fallPoint);
+                    piece = n;
+                }
+
+                piece.Initialize(newVal, p, pieces[newVal - 1]);
+
+                Node hole = GetNodeAtPoint(p);
+                hole.SetPiece(piece);
+                ResetPiece(piece);
+                piece.isFalling = true;
+                _fills[xx]++;
+            }
+        }        
     }
 
     private FlippedPieces GetFlipped(NodePiece p)
