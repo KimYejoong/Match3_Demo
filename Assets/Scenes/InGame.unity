@@ -769,7 +769,6 @@ MonoBehaviour:
   killedPiece: {fileID: 8073484922811247727, guid: 2e2b4ca4801042a4fa6a5b43f4c55002,
     type: 3}
   timeLimit: 20
-  timeDelayBeforeHint: 7
   gameState: 0
   moves: 5
 --- !u!4 &869164366

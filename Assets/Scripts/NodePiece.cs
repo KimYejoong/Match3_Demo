@@ -10,7 +10,6 @@ public class NodePiece : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 {
     public int value;
     public Point index;
-    private Match3 _game;
 
     [HideInInspector]
     public Vector2 pos;
@@ -31,12 +30,9 @@ public class NodePiece : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     private float _fallingSpeed;
     
     [SerializeField]
-    private float terminalSpeed = 8f;
-
-    private void Awake()
-    {
-        _game = FindObjectOfType<Match3>();
-    }
+    private float initialSpeed = 2f; // initial speed when free falling
+    [SerializeField]
+    private float terminalSpeed = 8f; // terminal speed when free falling
 
     public void Initialize(int v, Point p, Sprite piece)
     {        
@@ -68,7 +64,7 @@ public class NodePiece : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
             rect.anchoredPosition = Vector2.Lerp(rect.anchoredPosition, move, Time.deltaTime * 16f);
         else
         {
-            _fallingSpeed = Mathf.Clamp(2f, _fallingSpeed + gravity, terminalSpeed);
+            _fallingSpeed = Mathf.Clamp(initialSpeed, _fallingSpeed + gravity, terminalSpeed);
             rect.anchoredPosition += _fallingSpeed * Vector2.down;
         }
     }
@@ -116,10 +112,10 @@ public class NodePiece : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        if (_game.gameState != Match3.GameState.Started)
+        if (Match3.Instance.gameState != Match3.GameState.Started)
             return;
 
-        if (!_game.IsMovable())
+        if (!Match3.Instance.IsMovable())
             return;
 
         if (_updating)
@@ -130,7 +126,7 @@ public class NodePiece : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 
     public void OnPointerUp(PointerEventData eventData)
     {
-        if (_game.gameState != Match3.GameState.Started)
+        if (Match3.Instance.gameState != Match3.GameState.Started)
             return;
 
         MovePieces.instance.DropPiece();
