@@ -63,15 +63,10 @@ public class Match3 : MonoBehaviour
     [Header("Game Control")]
     [SerializeField]
     public float timeLimit;
-    [SerializeField] 
-    private float timeDelayBeforeHint;
 
     private float _timeElapsed;
     private float _timeStarted;
-
-    private float _timeWhenLastMatchHappened;
-    private float _timeElapsedFromLastMatch;
-
+    
     private int _combo;    
 
     public enum GameState
@@ -397,7 +392,8 @@ public class Match3 : MonoBehaviour
         for (int i = 0; i < _update.Count; i++)
         {
             NodePiece piece = _update[i];
-            if (!piece.UpdatePiece()) finishedUpdating.Add(piece);            
+            if (!piece.UpdatePiece())
+                finishedUpdating.Add(piece);            
         }
 
         int totalCount = _update.Count + finishedUpdating.Count;
@@ -449,7 +445,6 @@ public class Match3 : MonoBehaviour
                 }
 
                 scoreManager.AddPoint(earnedPoints * brokenPieces); // Add Points
-                //Debug.Log(_combo);
                 _combo++;                
 
                 scoreManager.UpdateCombo(_combo, moves);
@@ -469,8 +464,6 @@ public class Match3 : MonoBehaviour
         if (totalCount != 0)
             return;
         
-        //Debug.Log("Game Closing");
-
         StartCoroutine(AddScoreFromRemainTime(timeLimit - _timeElapsed));
         sfxManager.PlaySound("GameOver");
         timeManager.GameEnd();                
@@ -530,10 +523,10 @@ public class Match3 : MonoBehaviour
                 {
                     Point next = new Point(x, ny);
                     int nextVal = GetValueAtPoint(next);
-                    if (nextVal == 0)
+                    if (nextVal == 0) // if above cell is empty then continue (till meeting some other piece)
                         continue;
 
-                    if (nextVal != -1)
+                    if (nextVal != -1) // if any piece exists above, get that piece and make it drop
                     {
                         Node got = GetNodeAtPoint(next);
                         NodePiece piece = got.GetPiece();
@@ -543,7 +536,7 @@ public class Match3 : MonoBehaviour
 
                         got.SetPiece(null);
                     }
-                    else
+                    else // case: top of the board or red cell above
                     {
                         NodePiece piece;
                         Point fallPoint = new Point(x, (-1 - _fills[x]));

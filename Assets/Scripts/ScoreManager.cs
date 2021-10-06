@@ -69,6 +69,7 @@ public class ScoreManager : MonoBehaviour
         _anim = comboObject.GetComponent<Animator>();
         _anim.Play("Anim_Combo_Pop", -1, 0f);
         
+        StopCoroutine((ComboFade()));
         StartCoroutine(ComboFade());        
 
         moveValue.text = moves.ToString();

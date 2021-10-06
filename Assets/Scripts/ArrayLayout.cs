@@ -3,7 +3,6 @@ using System.Collections;
 
 [System.Serializable]
 public class ArrayLayout  {
-
 	[System.Serializable]
 	public struct RowData {
 		public bool[] row;
