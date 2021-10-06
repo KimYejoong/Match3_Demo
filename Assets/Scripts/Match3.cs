@@ -66,6 +66,8 @@ public class Match3 : MonoBehaviour
 
     private float _timeElapsed;
     private float _timeStarted;
+
+    private bool _isMovable;
     
     private int _combo;    
 
@@ -104,6 +106,7 @@ public class Match3 : MonoBehaviour
         _flipped = new List<FlippedPieces>();
         _dead = new List<NodePiece>();
         _killed = new List<KilledPiece>();
+        _isMovable = true;
 
         InitializeScore();
         InitializeBoard();
@@ -451,12 +454,14 @@ public class Match3 : MonoBehaviour
 
                 sfxManager.PlaySound("MatchSuccess");
 
-                ApplyGravityToBoard();
+                StartCoroutine(ApplyGravityToBoard());
             }
             
             _flipped.Remove(flip); // remove the flip after update
             _update.Remove(piece);            
         }
+        
+        _isMovable = (totalCount == 0);
 
         if (gameState != GameState.Closing)
             return;
@@ -468,6 +473,11 @@ public class Match3 : MonoBehaviour
         sfxManager.PlaySound("GameOver");
         timeManager.GameEnd();                
         gameState = GameState.End;
+    }
+
+    public bool IsMovable()
+    {
+        return _isMovable;
     }
 
     private IEnumerator AddScoreFromRemainTime(float time)
@@ -506,11 +516,11 @@ public class Match3 : MonoBehaviour
         return (int)Mathf.Floor(time) * 100;
     }
 
-    private void ApplyGravityToBoard()
+    private IEnumerator ApplyGravityToBoard()
     {
-        for (int x = 0; x < Width; x++)
+        for (int y = (Height - 1); y >= 0; y--) // from bottom to top
         {
-            for (int y = (Height - 1); y >= 0; y--) // from bottom to top
+            for (int x = 0; x < Width; x++)    
             {
                 Point p = new Point(x, y);
                 Node node = GetNodeAtPoint(p);
@@ -531,6 +541,7 @@ public class Match3 : MonoBehaviour
                         Node got = GetNodeAtPoint(next);
                         NodePiece piece = got.GetPiece();
 
+                        piece.isFalling = true;
                         node.SetPiece(piece);
                         _update.Add(piece);
 
@@ -561,6 +572,7 @@ public class Match3 : MonoBehaviour
                         }
 
                         piece.Initialize(newVal, p, pieces[newVal - 1]);
+                        piece.isFalling = true;
 
                         Node hole = GetNodeAtPoint(p);
                         hole.SetPiece(piece);
@@ -568,7 +580,9 @@ public class Match3 : MonoBehaviour
                         _fills[x]++;
                     }
                     break;
+
                 }
+                yield return new WaitForSeconds(0.02f); // delay between each piece's drop
             }
 
         }

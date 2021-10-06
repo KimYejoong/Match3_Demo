@@ -1,12 +1,13 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using UnityEngine.Serialization;
 
 public class NodePiece : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 {
-
     public int value;
     public Point index;
     private Match3 _game;
@@ -18,13 +19,30 @@ public class NodePiece : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     public RectTransform rect;
 
     private bool _updating;
+    
+    [HideInInspector]
+    public bool isFalling;
+    
     private Image _img;
+
+    [SerializeField]
+    private float gravity = 0.2f;
+
+    private float _fallingSpeed;
+    
+    [SerializeField]
+    private float terminalSpeed = 8f;
+
+    private void Awake()
+    {
+        _game = FindObjectOfType<Match3>();
+    }
 
     public void Initialize(int v, Point p, Sprite piece)
     {        
         _img = GetComponent<Image>();
         rect = GetComponent<RectTransform>();
-        _game = FindObjectOfType<Match3>();
+        _fallingSpeed = 0f;
 
         value = v;
         SetIndex(p);
@@ -46,22 +64,48 @@ public class NodePiece : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 
     public void MovePositionTo(Vector2 move)
     {
-        rect.anchoredPosition = Vector2.Lerp(rect.anchoredPosition, move, Time.deltaTime * 16f);
+        if (!isFalling)
+            rect.anchoredPosition = Vector2.Lerp(rect.anchoredPosition, move, Time.deltaTime * 16f);
+        else
+        {
+            _fallingSpeed = Mathf.Clamp(2f, _fallingSpeed + gravity, terminalSpeed);
+            rect.anchoredPosition += _fallingSpeed * Vector2.down;
+        }
     }
 
     public bool UpdatePiece()
     {
-        if (Vector2.Distance(rect.anchoredPosition, pos) > 1)
+        if (isFalling)
         {
-            MovePositionTo(pos);
-            _updating = true;
-            return true;
+            if (rect.anchoredPosition.y < pos.y)
+            {
+                rect.anchoredPosition = pos;
+                _updating = false;
+                isFalling = false;
+                _fallingSpeed = 0f;
+                return false;
+            }
+            else
+            {
+                MovePositionTo((pos));
+                _updating = true;
+                return true;
+            }
         }
         else
         {
-            rect.anchoredPosition = pos;
-            _updating = false;
-            return false;
+            if (Vector2.Distance(rect.anchoredPosition, pos) > 1)
+            {
+                MovePositionTo(pos);
+                _updating = true;
+                return true;
+            }
+            else
+            {
+                rect.anchoredPosition = pos;
+                _updating = false;
+                return false;
+            }
         }
     }
 
@@ -75,10 +119,13 @@ public class NodePiece : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
         if (_game.gameState != Match3.GameState.Started)
             return;
 
+        if (!_game.IsMovable())
+            return;
+
         if (_updating)
             return;
 
-        MovePieces.instance.MovePiece(this);   
+        MovePieces.instance.MovePiece(this);
     }
 
     public void OnPointerUp(PointerEventData eventData)
