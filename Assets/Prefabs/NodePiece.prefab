@@ -93,3 +93,7 @@ MonoBehaviour:
     y: 0
   pos: {x: 0, y: 0}
   rect: {fileID: 0}
+  isFalling: 0
+  gravity: 0.1
+  initialSpeed: 1
+  terminalSpeed: 4

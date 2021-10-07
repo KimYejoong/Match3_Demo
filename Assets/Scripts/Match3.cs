@@ -89,7 +89,7 @@ public class Match3 : MonoBehaviour
     }
 
     [HideInInspector]
-    public GravityProcessingStatus _gravityProcessingStatus; 
+    public GravityProcessingStatus gravityProcessingStatus; 
 
     [HideInInspector]
     public GameState gameState = GameState.Ready;
@@ -119,7 +119,7 @@ public class Match3 : MonoBehaviour
         _dead = new List<NodePiece>();
         _killed = new List<KilledPiece>();
         _isMovable = true;
-        _gravityProcessingStatus = GravityProcessingStatus.Idle;
+        gravityProcessingStatus = GravityProcessingStatus.Idle;
 
         InitializeScore();
         InitializeBoard();
@@ -405,24 +405,24 @@ public class Match3 : MonoBehaviour
 
         List<NodePiece> finishedUpdating = new List<NodePiece>();
 
-        if (_gravityProcessingStatus == GravityProcessingStatus.Await)
-            _gravityProcessingStatus = GravityProcessingStatus.Idle;
+        if (gravityProcessingStatus == GravityProcessingStatus.Await)
+            gravityProcessingStatus = GravityProcessingStatus.Idle;
         
         for (int i = 0; i < _update.Count; i++)
         {
             NodePiece piece = _update[i];
-            if (!piece.UpdatePiece())
-            {
-                if (piece.isFalling)
-                    piece.isFalling = false;
-                else
-                    finishedUpdating.Add(piece);
-            }
+            if (piece.UpdatePiece())
+                continue;
+            
+            if (piece.isFalling)
+                piece.isFalling = false;
+            else
+                finishedUpdating.Add(piece);
         }
 
         int totalCount = _update.Count + finishedUpdating.Count;
 
-        if (_gravityProcessingStatus != GravityProcessingStatus.Idle)
+        if (gravityProcessingStatus != GravityProcessingStatus.Idle)
             return;
 
         for (int i = 0; i < finishedUpdating.Count; i++)
@@ -590,10 +590,10 @@ public class Match3 : MonoBehaviour
             }
         }
 
-        _gravityProcessingStatus = GravityProcessingStatus.Locked; 
+        gravityProcessingStatus = GravityProcessingStatus.Locked; 
         // Set status to "Locked" to prevent matching while waiting for next step(drop new piece from above)
         yield return new WaitForSeconds(0.3f);
-        _gravityProcessingStatus = GravityProcessingStatus.Await;
+        gravityProcessingStatus = GravityProcessingStatus.Await;
         // Set status back to "Await" so that makes it possible to check whether the process is over from individual pieces
 
         for (int xx = 0; xx < Width; xx++)

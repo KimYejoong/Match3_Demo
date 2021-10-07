@@ -73,14 +73,13 @@ public class NodePiece : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     {
         if (isFalling)
         {
-            if (Match3.Instance._gravityProcessingStatus != Match3.GravityProcessingStatus.Locked)
-                Match3.Instance._gravityProcessingStatus = Match3.GravityProcessingStatus.Await;
+            if (Match3.Instance.gravityProcessingStatus != Match3.GravityProcessingStatus.Locked)
+                Match3.Instance.gravityProcessingStatus = Match3.GravityProcessingStatus.Await;
             
             if (rect.anchoredPosition.y < pos.y)
             {
                 rect.anchoredPosition = pos;
                 _updating = false;
-                //isFalling = false;
                 _fallingSpeed = 0f;
                 return false;
             }
